@@ -1,5 +1,6 @@
 import { app, BrowserWindow, BrowserView, ipcMain, shell } from 'electron'
 import { join } from 'path'
+import { setupCdpIpc } from './ipc/cdp'
 
 let mainWindow: BrowserWindow | null = null
 let browserView: BrowserView | null = null
@@ -72,6 +73,9 @@ function createWindow(): void {
     shell.openExternal(url)
     return { action: 'deny' }
   })
+
+  // Wire up CDP IPC
+  setupCdpIpc(mainWindow, browserView)
 
   // Load renderer
   if (process.env.NODE_ENV === 'development' && process.env['ELECTRON_RENDERER_URL']) {

@@ -1,5 +1,8 @@
 import { useRecordingStore } from '../stores/recording'
 import { useThemeStore } from '../stores/theme'
+import { useNetworkStore } from '../stores/network'
+import { useConsoleStore } from '../stores/console'
+import { useInteractionsStore } from '../stores/interactions'
 
 // Mock data matching the mockup
 const MOCK_NETWORK = [
@@ -52,6 +55,15 @@ export function DevToolsPanel({ activeTab, onTabChange }: { activeTab: Tab; onTa
   const { theme } = useThemeStore()
   const isDark = theme === 'dark'
 
+  // Use live data from stores, fall back to mock when empty
+  const liveNetwork = useNetworkStore((s) => s.entries)
+  const liveConsole = useConsoleStore((s) => s.entries)
+  const liveInteractions = useInteractionsStore((s) => s.entries)
+
+  const networkData = liveNetwork.length > 0 ? liveNetwork : MOCK_NETWORK.map((n, i) => ({ ...n, id: `mock-${i}` }))
+  const consoleData = liveConsole.length > 0 ? liveConsole : MOCK_CONSOLE.map((c, i) => ({ ...c, id: `mock-${i}` }))
+  const interactionData = liveInteractions.length > 0 ? liveInteractions : MOCK_INTERACTIONS.map((int, i) => ({ ...int, id: `mock-${i}`, selector: '' }))
+
   const tabs: { id: Tab; label: string }[] = [
     { id: 'network', label: 'Network' },
     { id: 'console', label: 'Console' },
@@ -103,9 +115,9 @@ export function DevToolsPanel({ activeTab, onTabChange }: { activeTab: Tab; onTa
               <span>Status</span>
               <span>Time</span>
             </div>
-            {MOCK_NETWORK.map((log, i) => (
+            {networkData.map((log) => (
               <div
-                key={i}
+                key={log.id}
                 className="grid px-3 py-1.5 font-mono text-[11px]"
                 style={{
                   gridTemplateColumns: '50px 1fr 38px 50px',
@@ -141,9 +153,9 @@ export function DevToolsPanel({ activeTab, onTabChange }: { activeTab: Tab; onTa
 
         {activeTab === 'console' && (
           <div className="p-1">
-            {MOCK_CONSOLE.map((log, i) => (
+            {consoleData.map((log) => (
               <div
-                key={i}
+                key={log.id}
                 className="py-1.5 px-2.5 rounded mb-0.5 font-mono text-[11px] leading-relaxed"
                 style={{
                   background:
@@ -193,9 +205,9 @@ export function DevToolsPanel({ activeTab, onTabChange }: { activeTab: Tab; onTa
               <span>Action</span>
               <span>Target</span>
             </div>
-            {MOCK_INTERACTIONS.map((int, i) => (
+            {interactionData.map((int) => (
               <div
-                key={i}
+                key={int.id}
                 className="grid px-3 py-1.5 font-mono text-[11px]"
                 style={{
                   gridTemplateColumns: '44px 60px 1fr',

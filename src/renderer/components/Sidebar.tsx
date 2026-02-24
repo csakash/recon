@@ -2,6 +2,9 @@ import { useEffect } from 'react'
 import { useRecordingStore } from '../stores/recording'
 import { useSessionsStore } from '../stores/sessions'
 import { useAiStore } from '../stores/ai'
+import { useNetworkStore } from '../stores/network'
+import { useConsoleStore } from '../stores/console'
+import { useInteractionsStore } from '../stores/interactions'
 import { StatusDot } from './ui/StatusDot'
 
 const MOCK_AI_MESSAGES = [
@@ -31,6 +34,9 @@ export function Sidebar() {
   const { status, elapsed, micActive, startRecording, stopRecording, toggleMic, tick } = useRecordingStore()
   const { sessions, activeSessionId, setActive } = useSessionsStore()
   const { setMessages, setAnalyzing, addMessage } = useAiStore()
+  const clearNetwork = useNetworkStore((s) => s.clear)
+  const clearConsole = useConsoleStore((s) => s.clear)
+  const clearInteractions = useInteractionsStore((s) => s.clear)
   const isRecording = status === 'recording'
 
   // Timer tick
@@ -46,10 +52,17 @@ export function Sidebar() {
   const handleStart = () => {
     startRecording()
     setMessages([])
+    clearNetwork()
+    clearConsole()
+    clearInteractions()
+    // Start CDP capture
+    window.recon?.cdpStart()
   }
 
   const handleStop = () => {
     stopRecording()
+    // Stop CDP capture
+    window.recon?.cdpStop()
     setAnalyzing(true)
     addMessage(MOCK_AI_MESSAGES[0])
     setTimeout(() => {
