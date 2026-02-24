@@ -17,6 +17,7 @@ export type ReconAPI = {
   onNetworkEntry: (callback: (entry: any) => void) => () => void
   onConsoleEntry: (callback: (entry: any) => void) => () => void
   onInteractionEntry: (callback: (entry: any) => void) => () => void
+  onCdpClear: (callback: () => void) => () => void
 
   // Session management
   sessionCreate: (meta: any) => Promise<{ success: boolean; dir?: string }>
@@ -76,6 +77,11 @@ const api: ReconAPI = {
     const handler = (_event: Electron.IpcRendererEvent, entry: any) => callback(entry)
     ipcRenderer.on('cdp:interaction-entry', handler)
     return () => ipcRenderer.removeListener('cdp:interaction-entry', handler)
+  },
+  onCdpClear: (callback) => {
+    const handler = () => callback()
+    ipcRenderer.on('cdp:clear', handler)
+    return () => ipcRenderer.removeListener('cdp:clear', handler)
   },
 
   // Session management

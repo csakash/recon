@@ -89,6 +89,7 @@ export class InteractionCapture {
   private debugger: Electron.Debugger
   private onEntry: (entry: CdpInteractionEntry) => void
   private entryCount = 0
+  private handler: ((_event: Electron.Event, method: string, params: any) => void) | null = null
 
   constructor(webContents: WebContents, onEntry: (entry: CdpInteractionEntry) => void) {
     this.debugger = webContents.debugger
@@ -104,12 +105,14 @@ export class InteractionCapture {
       source: TRACKING_SCRIPT,
     })
     // Also inject into current page
-    await this.debugger.sendCommand('Runtime.evaluate', {
-      expression: TRACKING_SCRIPT,
-    })
+    try {
+      await this.debugger.sendCommand('Runtime.evaluate', {
+        expression: TRACKING_SCRIPT,
+      })
+    } catch {}
 
     // Listen for the tracking messages from console.debug
-    this.debugger.on('message', (_event, method, params) => {
+    this.handler = (_event, method, params) => {
       if (method === 'Runtime.consoleAPICalled' && params.type === 'debug') {
         const args = params.args || []
         if (args.length >= 2 && args[0]?.value === '__recon_interaction__') {
@@ -125,10 +128,15 @@ export class InteractionCapture {
           } catch {}
         }
       }
-    })
+    }
+    this.debugger.on('message', this.handler)
   }
 
   async stop(): Promise<void> {
+    if (this.handler) {
+      this.debugger.removeListener('message', this.handler)
+      this.handler = null
+    }
     try {
       await this.debugger.sendCommand('Page.disable')
     } catch {}

@@ -27,6 +27,7 @@ export class NetworkCapture {
   private pending = new Map<string, PendingRequest>()
   private onEntry: (entry: CdpNetworkEntry) => void
   private entryCount = 0
+  private handler: ((_event: Electron.Event, method: string, params: any) => void) | null = null
 
   constructor(webContents: WebContents, onEntry: (entry: CdpNetworkEntry) => void) {
     this.debugger = webContents.debugger
@@ -39,7 +40,7 @@ export class NetworkCapture {
     }
     await this.debugger.sendCommand('Network.enable')
 
-    this.debugger.on('message', (_event, method, params) => {
+    this.handler = (_event, method, params) => {
       switch (method) {
         case 'Network.requestWillBeSent':
           this.handleRequest(params)
@@ -51,10 +52,15 @@ export class NetworkCapture {
           this.handleFailed(params)
           break
       }
-    })
+    }
+    this.debugger.on('message', this.handler)
   }
 
   async stop(): Promise<void> {
+    if (this.handler) {
+      this.debugger.removeListener('message', this.handler)
+      this.handler = null
+    }
     try {
       await this.debugger.sendCommand('Network.disable')
     } catch {}

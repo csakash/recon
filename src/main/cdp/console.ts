@@ -11,6 +11,7 @@ export class ConsoleCapture {
   private debugger: Electron.Debugger
   private onEntry: (entry: CdpConsoleEntry) => void
   private entryCount = 0
+  private handler: ((_event: Electron.Event, method: string, params: any) => void) | null = null
 
   constructor(webContents: WebContents, onEntry: (entry: CdpConsoleEntry) => void) {
     this.debugger = webContents.debugger
@@ -24,7 +25,7 @@ export class ConsoleCapture {
     await this.debugger.sendCommand('Runtime.enable')
     await this.debugger.sendCommand('Log.enable')
 
-    this.debugger.on('message', (_event, method, params) => {
+    this.handler = (_event, method, params) => {
       switch (method) {
         case 'Runtime.consoleAPICalled':
           this.handleConsoleAPI(params)
@@ -36,10 +37,15 @@ export class ConsoleCapture {
           this.handleLogEntry(params)
           break
       }
-    })
+    }
+    this.debugger.on('message', this.handler)
   }
 
   async stop(): Promise<void> {
+    if (this.handler) {
+      this.debugger.removeListener('message', this.handler)
+      this.handler = null
+    }
     try {
       await this.debugger.sendCommand('Runtime.disable')
       await this.debugger.sendCommand('Log.disable')
@@ -48,6 +54,12 @@ export class ConsoleCapture {
 
   private handleConsoleAPI(params: any): void {
     const { type, args, stackTrace } = params
+
+    // Filter out interaction tracking messages from InteractionCapture
+    if (type === 'debug' && args?.length >= 1 && args[0]?.value === '__recon_interaction__') {
+      return
+    }
+
     const level = this.mapLevel(type)
     const msg = args?.map((a: any) => a.value ?? a.description ?? '').join(' ') || ''
 

@@ -15,8 +15,11 @@ import { useRecordingStore } from './stores/recording'
 export default function App() {
   const [rightTab, setRightTab] = useState<'network' | 'console' | 'interactions'>('network')
   const addNetworkEntry = useNetworkStore((s) => s.addEntry)
+  const clearNetwork = useNetworkStore((s) => s.clear)
   const addConsoleEntry = useConsoleStore((s) => s.addEntry)
+  const clearConsole = useConsoleStore((s) => s.clear)
   const addInteractionEntry = useInteractionsStore((s) => s.addEntry)
+  const clearInteractions = useInteractionsStore((s) => s.clear)
   const setUrl = useBrowserStore((s) => s.setUrl)
   const { status, startRecording, stopRecording } = useRecordingStore()
 
@@ -28,9 +31,14 @@ export default function App() {
       cleanups.push(window.recon.onConsoleEntry(addConsoleEntry))
       cleanups.push(window.recon.onInteractionEntry(addInteractionEntry))
       cleanups.push(window.recon.onUrlChanged(setUrl))
+      cleanups.push(window.recon.onCdpClear(() => {
+        clearNetwork()
+        clearConsole()
+        clearInteractions()
+      }))
     }
     return () => cleanups.forEach((fn) => fn())
-  }, [addNetworkEntry, addConsoleEntry, addInteractionEntry, setUrl])
+  }, [addNetworkEntry, addConsoleEntry, addInteractionEntry, setUrl, clearNetwork, clearConsole, clearInteractions])
 
   // Keyboard shortcuts
   useEffect(() => {

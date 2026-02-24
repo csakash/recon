@@ -1,41 +1,7 @@
-import { useRecordingStore } from '../stores/recording'
 import { useThemeStore } from '../stores/theme'
 import { useNetworkStore } from '../stores/network'
 import { useConsoleStore } from '../stores/console'
 import { useInteractionsStore } from '../stores/interactions'
-
-// Mock data matching the mockup
-const MOCK_NETWORK = [
-  { method: 'GET', url: '/api/v1/auth/session', status: 200, time: '42ms' },
-  { method: 'POST', url: '/api/v1/cart/update', status: 500, time: '1.8s' },
-  { method: 'GET', url: '/api/v1/products?page=2', status: 200, time: '320ms' },
-  { method: 'GET', url: '/static/js/main.chunk.js', status: 304, time: '12ms' },
-  { method: 'POST', url: '/api/v1/cart/update', status: 500, time: '2.1s' },
-  { method: 'GET', url: '/api/v1/user/preferences', status: 200, time: '89ms' },
-  { method: 'OPTIONS', url: '/api/v1/cart/update', status: 204, time: '5ms' },
-  { method: 'POST', url: '/api/v1/cart/update', status: 500, time: '1.9s' },
-]
-
-const MOCK_CONSOLE = [
-  { type: 'error', msg: "Uncaught TypeError: Cannot read property 'items' of undefined", src: 'cart.js:142' },
-  { type: 'warn', msg: 'React does not recognize the `isActive` prop on a DOM element.', src: 'react-dom.js' },
-  { type: 'log', msg: 'Cart state: { items: [], total: 0 }', src: 'store.js:88' },
-  { type: 'error', msg: 'POST /api/v1/cart/update 500 (Internal Server Error)', src: 'network' },
-  { type: 'log', msg: '[HMR] Waiting for update signal from WDS...', src: 'webpack' },
-  { type: 'error', msg: 'Failed to update cart: cartId is null after auth refresh', src: 'cart.js:156' },
-  { type: 'warn', msg: 'Each child in a list should have a unique "key" prop.', src: 'ProductList.jsx:34' },
-  { type: 'log', msg: 'Session token refreshed successfully', src: 'auth.js:22' },
-]
-
-const MOCK_INTERACTIONS = [
-  { time: '00:04', action: 'click', target: 'Button — "Add to Cart"' },
-  { time: '00:06', action: 'navigate', target: '/cart' },
-  { time: '00:11', action: 'click', target: 'Button — "Update Quantity"' },
-  { time: '00:12', action: 'wait', target: 'Spinner visible for 2.1s' },
-  { time: '00:15', action: 'click', target: 'Button — "Update Quantity" (retry)' },
-  { time: '00:18', action: 'scroll', target: 'Page scrolled down 400px' },
-  { time: '00:22', action: 'click', target: 'Link — "Back to Products"' },
-]
 
 function NetworkStatusBadge({ status }: { status: number }) {
   const color =
@@ -45,8 +11,18 @@ function NetworkStatusBadge({ status }: { status: number }) {
         ? 'var(--color-orange)'
         : status >= 300
           ? 'var(--color-dim)'
-          : 'var(--color-green)'
-  return <span style={{ color, fontWeight: status >= 400 ? 700 : 400 }}>{status}</span>
+          : status === 0
+            ? 'var(--color-red)'
+            : 'var(--color-green)'
+  return <span style={{ color, fontWeight: status >= 400 || status === 0 ? 700 : 400 }}>{status || '—'}</span>
+}
+
+function EmptyState({ message }: { message: string }) {
+  return (
+    <div className="flex items-center justify-center h-32 text-[11px]" style={{ color: 'var(--color-dim)' }}>
+      {message}
+    </div>
+  )
 }
 
 type Tab = 'network' | 'console' | 'interactions'
@@ -55,19 +31,14 @@ export function DevToolsPanel({ activeTab, onTabChange }: { activeTab: Tab; onTa
   const { theme } = useThemeStore()
   const isDark = theme === 'dark'
 
-  // Use live data from stores, fall back to mock when empty
-  const liveNetwork = useNetworkStore((s) => s.entries)
-  const liveConsole = useConsoleStore((s) => s.entries)
-  const liveInteractions = useInteractionsStore((s) => s.entries)
+  const networkData = useNetworkStore((s) => s.entries)
+  const consoleData = useConsoleStore((s) => s.entries)
+  const interactionData = useInteractionsStore((s) => s.entries)
 
-  const networkData = liveNetwork.length > 0 ? liveNetwork : MOCK_NETWORK.map((n, i) => ({ ...n, id: `mock-${i}` }))
-  const consoleData = liveConsole.length > 0 ? liveConsole : MOCK_CONSOLE.map((c, i) => ({ ...c, id: `mock-${i}` }))
-  const interactionData = liveInteractions.length > 0 ? liveInteractions : MOCK_INTERACTIONS.map((int, i) => ({ ...int, id: `mock-${i}`, selector: '' }))
-
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'network', label: 'Network' },
-    { id: 'console', label: 'Console' },
-    { id: 'interactions', label: 'Interactions' },
+  const tabs: { id: Tab; label: string; count: number }[] = [
+    { id: 'network', label: 'Network', count: networkData.length },
+    { id: 'console', label: 'Console', count: consoleData.length },
+    { id: 'interactions', label: 'Interactions', count: interactionData.length },
   ]
 
   return (
@@ -92,6 +63,9 @@ export function DevToolsPanel({ activeTab, onTabChange }: { activeTab: Tab; onTa
             }}
           >
             {t.label}
+            {t.count > 0 && (
+              <span className="ml-1 text-[9px] opacity-50">({t.count})</span>
+            )}
           </button>
         ))}
       </div>
@@ -115,7 +89,10 @@ export function DevToolsPanel({ activeTab, onTabChange }: { activeTab: Tab; onTa
               <span>Status</span>
               <span>Time</span>
             </div>
-            {networkData.map((log) => (
+            {networkData.length === 0 ? (
+              <EmptyState message="Navigate to a page to see network activity" />
+            ) : (
+              networkData.map((log) => (
               <div
                 key={log.id}
                 className="grid px-3 py-1.5 font-mono text-[11px]"
@@ -147,13 +124,17 @@ export function DevToolsPanel({ activeTab, onTabChange }: { activeTab: Tab; onTa
                   {log.time}
                 </span>
               </div>
-            ))}
+            ))
+            )}
           </div>
         )}
 
         {activeTab === 'console' && (
           <div className="p-1">
-            {consoleData.map((log) => (
+            {consoleData.length === 0 ? (
+              <EmptyState message="Console output will appear here" />
+            ) : (
+              consoleData.map((log) => (
               <div
                 key={log.id}
                 className="py-1.5 px-2.5 rounded mb-0.5 font-mono text-[11px] leading-relaxed"
@@ -185,7 +166,8 @@ export function DevToolsPanel({ activeTab, onTabChange }: { activeTab: Tab; onTa
                   {log.src}
                 </div>
               </div>
-            ))}
+            ))
+            )}
           </div>
         )}
 
@@ -205,7 +187,10 @@ export function DevToolsPanel({ activeTab, onTabChange }: { activeTab: Tab; onTa
               <span>Action</span>
               <span>Target</span>
             </div>
-            {interactionData.map((int) => (
+            {interactionData.length === 0 ? (
+              <EmptyState message="Interact with the page to see events" />
+            ) : (
+              interactionData.map((int) => (
               <div
                 key={int.id}
                 className="grid px-3 py-1.5 font-mono text-[11px]"
@@ -223,9 +208,13 @@ export function DevToolsPanel({ activeTab, onTabChange }: { activeTab: Tab; onTa
                         ? 'var(--color-blue)'
                         : int.action === 'navigate'
                           ? 'var(--color-green)'
-                          : int.action === 'wait'
-                            ? 'var(--color-orange)'
-                            : 'var(--color-dim)',
+                          : int.action === 'input'
+                            ? 'var(--color-yellow)'
+                            : int.action === 'scroll'
+                              ? 'var(--color-dim)'
+                              : int.action === 'submit'
+                                ? 'var(--color-orange)'
+                                : 'var(--color-dim)',
                   }}
                 >
                   {int.action}
@@ -237,7 +226,8 @@ export function DevToolsPanel({ activeTab, onTabChange }: { activeTab: Tab; onTa
                   {int.target}
                 </span>
               </div>
-            ))}
+            ))
+            )}
           </div>
         )}
       </div>
