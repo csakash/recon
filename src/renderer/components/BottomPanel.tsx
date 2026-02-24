@@ -68,7 +68,7 @@ export function BottomPanel({
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--color-bg2)' }}>
       {/* Tab bar */}
-      <div className="flex items-center gap-1 px-3 shrink-0" style={{ borderBottom: '1px solid var(--color-border)' }}>
+      <div className="flex items-center gap-6 px-4 shrink-0" style={{ borderBottom: '1px solid var(--color-border)' }}>
         {tabs.map((t) => (
           <button
             key={t.id}
