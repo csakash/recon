@@ -68,19 +68,20 @@ export function BottomPanel({
   return (
     <div className="flex flex-col h-full" style={{ background: 'var(--color-bg2)' }}>
       {/* Tab bar */}
-      <div className="flex shrink-0" style={{ borderBottom: '1px solid var(--color-border)' }}>
+      <div className="flex items-center gap-1 px-3 shrink-0" style={{ borderBottom: '1px solid var(--color-border)' }}>
         {tabs.map((t) => (
           <button
             key={t.id}
             onClick={() => onTabChange(t.id)}
-            className="px-4 py-2 cursor-pointer text-[11.5px] transition-all"
+            className="px-3 py-2 cursor-pointer text-[11px] uppercase tracking-wider transition-all"
             style={{
               background: 'none',
               border: 'none',
               borderBottom: activeTab === t.id ? '2px solid var(--color-accent)' : '2px solid transparent',
               color: activeTab === t.id ? 'var(--color-text-primary)' : 'var(--color-dim)',
-              fontWeight: activeTab === t.id ? 600 : 400,
+              fontWeight: activeTab === t.id ? 600 : 500,
               fontFamily: 'var(--font-sans)',
+              letterSpacing: '0.05em',
             }}
           >
             {t.label}
