@@ -21,6 +21,7 @@ export function Sidebar() {
   const clearInteractions = useInteractionsStore((s) => s.clear)
   const { openSessionTab, ensureBrowserTab, convertBrowserToSession } = useTabsStore()
   const currentUrl = useBrowserStore((s) => s.url)
+  const setUrl = useBrowserStore((s) => s.setUrl)
   const isRecording = status === 'recording'
 
   // Load sessions on mount
@@ -48,6 +49,10 @@ export function Sidebar() {
     try {
       // Ensure we're on the browser tab
       ensureBrowserTab()
+
+      // Navigate to blank page for a fresh start
+      window.recon?.navigate('about:blank')
+      setUrl('')
 
       const sessionId = crypto.randomUUID()
       const name = `Session ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`

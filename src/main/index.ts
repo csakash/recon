@@ -65,7 +65,7 @@ function createWindow(): void {
   ipcMain.on('browser-navigate', (_event, url: string) => {
     if (embeddedView) {
       let fullUrl = url
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      if (url !== 'about:blank' && !url.startsWith('http://') && !url.startsWith('https://')) {
         fullUrl = `https://${url}`
       }
       embeddedView.webContents.loadURL(fullUrl).catch((err) => {
