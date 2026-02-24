@@ -1,4 +1,4 @@
-import { BrowserView, BrowserWindow, ipcMain } from 'electron'
+import { WebContentsView, BrowserWindow, ipcMain } from 'electron'
 import { NetworkCapture, CdpNetworkEntry } from '../cdp/network'
 import { ConsoleCapture, CdpConsoleEntry } from '../cdp/console'
 import { InteractionCapture, CdpInteractionEntry } from '../cdp/interactions'
@@ -7,8 +7,8 @@ let networkCapture: NetworkCapture | null = null
 let consoleCapture: ConsoleCapture | null = null
 let interactionCapture: InteractionCapture | null = null
 
-export function setupCdpIpc(mainWindow: BrowserWindow, browserView: BrowserView): void {
-  const wc = browserView.webContents
+export function setupCdpIpc(mainWindow: BrowserWindow, embeddedView: WebContentsView): void {
+  const wc = embeddedView.webContents
 
   ipcMain.handle('cdp:start', async () => {
     try {

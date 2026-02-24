@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { TitleBar } from './components/TitleBar'
 import { Sidebar } from './components/Sidebar'
 import { UrlBar } from './components/UrlBar'
-import { MockBrowserContent } from './components/MockBrowserContent'
+import { BrowserGap } from './components/BrowserGap'
 import { DevToolsPanel } from './components/DevToolsPanel'
 import { AiTerminal } from './components/AiTerminal'
 import { ResizablePanel } from './components/ui/ResizablePanel'
@@ -74,7 +74,7 @@ export default function App() {
             {/* Browser area */}
             <div className="flex-1 flex flex-col min-w-0">
               <UrlBar />
-              <MockBrowserContent />
+              <BrowserGap />
             </div>
 
             <DevToolsPanel activeTab={rightTab} onTabChange={setRightTab} />

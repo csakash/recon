@@ -1,4 +1,4 @@
-import { app, BrowserWindow, BrowserView, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, WebContentsView, ipcMain, shell } from 'electron'
 import { join } from 'path'
 import { setupCdpIpc } from './ipc/cdp'
 import { setupSessionIpc } from './ipc/sessions'
@@ -6,7 +6,7 @@ import { setupCaptureIpc } from './ipc/capture'
 import { setupAiIpc } from './ipc/ai'
 
 let mainWindow: BrowserWindow | null = null
-let browserView: BrowserView | null = null
+let embeddedView: WebContentsView | null = null
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -25,78 +25,99 @@ function createWindow(): void {
     }
   })
 
-  // Create BrowserView for embedded browser
-  browserView = new BrowserView({
+  // Create WebContentsView for the embedded browser
+  embeddedView = new WebContentsView({
     webPreferences: {
       sandbox: true,
       contextIsolation: true,
       nodeIntegration: false
     }
   })
-  mainWindow.addBrowserView(browserView)
+  mainWindow.contentView.addChildView(embeddedView)
 
-  // Handle BrowserView bounds from renderer
+  // Handle embedded browser bounds from renderer
   ipcMain.on('browser-gap-bounds', (_event, bounds: { x: number; y: number; width: number; height: number }) => {
-    if (browserView && mainWindow) {
-      browserView.setBounds(bounds)
-      browserView.setAutoResize({ width: false, height: false })
+    if (embeddedView) {
+      embeddedView.setBounds(bounds)
     }
   })
 
   // Navigation controls
   ipcMain.on('browser-navigate', (_event, url: string) => {
-    if (browserView) {
-      const fullUrl = url.startsWith('http') ? url : `https://${url}`
-      browserView.webContents.loadURL(fullUrl).catch(() => {})
+    if (embeddedView) {
+      let fullUrl = url
+      if (!url.startsWith('http://') && !url.startsWith('https://')) {
+        fullUrl = `https://${url}`
+      }
+      embeddedView.webContents.loadURL(fullUrl).catch((err) => {
+        console.error('Failed to load URL:', err.message)
+      })
     }
   })
 
   ipcMain.on('browser-go-back', () => {
-    if (browserView?.webContents.canGoBack()) browserView.webContents.goBack()
+    if (embeddedView?.webContents.canGoBack()) embeddedView.webContents.goBack()
   })
 
   ipcMain.on('browser-go-forward', () => {
-    if (browserView?.webContents.canGoForward()) browserView.webContents.goForward()
+    if (embeddedView?.webContents.canGoForward()) embeddedView.webContents.goForward()
   })
 
   ipcMain.on('browser-reload', () => {
-    browserView?.webContents.reload()
+    embeddedView?.webContents.reload()
   })
 
-  // Sync URL changes from BrowserView back to renderer
-  browserView.webContents.on('did-navigate', (_event, url) => {
+  // Sync URL changes from embedded browser back to renderer
+  embeddedView.webContents.on('did-navigate', (_event, url) => {
     mainWindow?.webContents.send('browser-url-changed', url)
   })
-  browserView.webContents.on('did-navigate-in-page', (_event, url) => {
+  embeddedView.webContents.on('did-navigate-in-page', (_event, url) => {
     mainWindow?.webContents.send('browser-url-changed', url)
   })
 
-  // Open external links in default browser
-  browserView.webContents.setWindowOpenHandler(({ url }) => {
-    shell.openExternal(url)
+  // Sync page title
+  embeddedView.webContents.on('page-title-updated', (_event, title) => {
+    mainWindow?.webContents.send('browser-title-changed', title)
+  })
+
+  // Handle loading states
+  embeddedView.webContents.on('did-start-loading', () => {
+    mainWindow?.webContents.send('browser-loading', true)
+  })
+  embeddedView.webContents.on('did-stop-loading', () => {
+    mainWindow?.webContents.send('browser-loading', false)
+  })
+
+  // Open new windows (target=_blank etc) inside the same view
+  embeddedView.webContents.setWindowOpenHandler(({ url }) => {
+    // Load in the same embedded browser instead of opening externally
+    embeddedView?.webContents.loadURL(url)
     return { action: 'deny' }
   })
 
-  // Wire up CDP IPC
-  setupCdpIpc(mainWindow, browserView)
+  // Wire up CDP IPC (pass the WebContentsView)
+  setupCdpIpc(mainWindow, embeddedView)
 
   // Wire up session and capture IPC
   setupSessionIpc()
-  setupCaptureIpc(mainWindow, browserView)
+  setupCaptureIpc(mainWindow, embeddedView)
 
   // Wire up AI IPC
   setupAiIpc(mainWindow)
 
-  // Load renderer
+  // Load renderer UI
   if (process.env.NODE_ENV === 'development' && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
     mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
   }
 
+  // Load a default page in the embedded browser
+  embeddedView.webContents.loadURL('https://google.com')
+
   mainWindow.on('closed', () => {
     mainWindow = null
-    browserView = null
+    embeddedView = null
   })
 }
 

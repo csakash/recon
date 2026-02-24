@@ -1,9 +1,14 @@
-import { useState, KeyboardEvent } from 'react'
+import { useState, useEffect, KeyboardEvent } from 'react'
 import { useBrowserStore } from '../stores/browser'
 
 export function UrlBar() {
   const { url, setUrl } = useBrowserStore()
   const [inputValue, setInputValue] = useState(url)
+
+  // Sync input when store URL changes (e.g., BrowserView navigated)
+  useEffect(() => {
+    setInputValue(url)
+  }, [url])
 
   const handleNavigate = () => {
     setUrl(inputValue)

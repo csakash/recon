@@ -1,17 +1,17 @@
-import { BrowserView, BrowserWindow, ipcMain } from 'electron'
+import { WebContentsView, BrowserWindow, ipcMain } from 'electron'
 import { VideoCapture } from '../capture/video'
 import { AudioCapture } from '../capture/audio'
 
 let videoCapture: VideoCapture | null = null
 let audioCapture: AudioCapture | null = null
 
-export function setupCaptureIpc(mainWindow: BrowserWindow, browserView: BrowserView): void {
+export function setupCaptureIpc(mainWindow: BrowserWindow, embeddedView: WebContentsView): void {
   audioCapture = new AudioCapture(mainWindow)
   audioCapture.setup()
 
   ipcMain.handle('capture:start-video', async () => {
     try {
-      videoCapture = new VideoCapture(browserView.webContents)
+      videoCapture = new VideoCapture(embeddedView.webContents)
       videoCapture.start()
       return { success: true }
     } catch (err: any) {
