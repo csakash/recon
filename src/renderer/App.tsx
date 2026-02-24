@@ -5,8 +5,7 @@ import { UrlBar } from './components/UrlBar'
 import { BrowserGap } from './components/BrowserGap'
 import { TabBar } from './components/TabBar'
 import { SessionReplay } from './components/SessionReplay'
-import { DevToolsPanel } from './components/DevToolsPanel'
-import { AiTerminal } from './components/AiTerminal'
+import { BottomPanel } from './components/BottomPanel'
 import { ResizablePanel } from './components/ui/ResizablePanel'
 import { useNetworkStore, NetworkEntry } from './stores/network'
 import { useConsoleStore, ConsoleEntry } from './stores/console'
@@ -24,7 +23,7 @@ interface SessionData {
 }
 
 export default function App() {
-  const [rightTab, setRightTab] = useState<'network' | 'console' | 'interactions'>('network')
+  const [bottomTab, setBottomTab] = useState<'network' | 'console' | 'interactions' | 'ai'>('network')
   const addNetworkEntry = useNetworkStore((s) => s.addEntry)
   const clearNetwork = useNetworkStore((s) => s.clear)
   const addConsoleEntry = useConsoleStore((s) => s.addEntry)
@@ -127,10 +126,11 @@ export default function App() {
         urlInput?.focus()
         urlInput?.select()
       }
-      // Cmd+1/2/3: switch right panel tabs
-      if (meta && e.key === '1') { e.preventDefault(); setRightTab('network') }
-      if (meta && e.key === '2') { e.preventDefault(); setRightTab('console') }
-      if (meta && e.key === '3') { e.preventDefault(); setRightTab('interactions') }
+      // Cmd+1/2/3/4: switch bottom panel tabs
+      if (meta && e.key === '1') { e.preventDefault(); setBottomTab('network') }
+      if (meta && e.key === '2') { e.preventDefault(); setBottomTab('console') }
+      if (meta && e.key === '3') { e.preventDefault(); setBottomTab('interactions') }
+      if (meta && e.key === '4') { e.preventDefault(); setBottomTab('ai') }
     }
 
     window.addEventListener('keydown', handleKeyDown)
@@ -144,54 +144,49 @@ export default function App() {
       <div className="flex-1 flex overflow-hidden min-h-0">
         <Sidebar />
 
-        {/* Center + Right */}
+        {/* Center + Bottom */}
         <div className="flex-1 flex flex-col min-w-0">
-          {/* Browser + DevTools */}
-          <div className="flex-1 flex overflow-hidden min-h-0">
-            {/* Browser / Replay area */}
-            <div className="flex-1 flex flex-col min-w-0">
-              <TabBar />
-              {isBrowserActive ? (
-                <>
-                  <UrlBar />
-                  <BrowserGap />
-                </>
-              ) : activeSessionId && sessionData ? (
-                <SessionReplay
-                  sessionId={activeSessionId}
-                  frameCount={sessionData.frameCount}
-                  duration={sessionData.duration}
-                  onTimeUpdate={handleReplayTimeUpdate}
-                />
-              ) : (
-                <div
-                  className="flex-1 flex items-center justify-center text-[12px]"
-                  style={{ background: 'var(--color-bg)', color: 'var(--color-dim)' }}
-                >
-                  Loading session...
-                </div>
-              )}
-            </div>
-
-            <DevToolsPanel
-              activeTab={rightTab}
-              onTabChange={setRightTab}
-              replayMode={!isBrowserActive && !!sessionData}
-              replayNetwork={replayNetwork}
-              replayConsole={replayConsole}
-              replayInteractions={replayInteractions}
-            />
+          {/* Browser / Replay area (full width) */}
+          <div className="flex-1 flex flex-col min-h-0">
+            <TabBar />
+            {isBrowserActive ? (
+              <>
+                <UrlBar />
+                <BrowserGap />
+              </>
+            ) : activeSessionId && sessionData ? (
+              <SessionReplay
+                sessionId={activeSessionId}
+                frameCount={sessionData.frameCount}
+                duration={sessionData.duration}
+                onTimeUpdate={handleReplayTimeUpdate}
+              />
+            ) : (
+              <div
+                className="flex-1 flex items-center justify-center text-[12px]"
+                style={{ background: 'var(--color-bg)', color: 'var(--color-dim)' }}
+              >
+                Loading session...
+              </div>
+            )}
           </div>
 
           <ResizablePanel
             direction="vertical"
             minSize={120}
-            maxSize={400}
-            defaultSize={200}
+            maxSize={500}
+            defaultSize={220}
             className="shrink-0"
             style={{ borderTop: '1px solid var(--color-border)', background: 'var(--color-bg2)' }}
           >
-            <AiTerminal />
+            <BottomPanel
+              activeTab={bottomTab}
+              onTabChange={setBottomTab}
+              replayMode={!isBrowserActive && !!sessionData}
+              replayNetwork={replayNetwork}
+              replayConsole={replayConsole}
+              replayInteractions={replayInteractions}
+            />
           </ResizablePanel>
         </div>
       </div>
