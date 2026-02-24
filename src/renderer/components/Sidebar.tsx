@@ -171,7 +171,7 @@ export function Sidebar() {
       style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg2)' }}
     >
       {/* Record Button */}
-      <div className="p-3.5" style={{ borderBottom: '1px solid var(--color-border)' }}>
+      <div className="p-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
         {!isRecording ? (
           <button
             onClick={handleStart}
@@ -224,7 +224,7 @@ export function Sidebar() {
       </div>
 
       {/* Sessions Header */}
-      <div className="flex items-center justify-between px-3 pt-2.5 pb-1.5">
+      <div className="flex items-center justify-between px-4 pt-3 pb-2">
         <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-dim)' }}>
           Sessions
         </span>
@@ -237,11 +237,11 @@ export function Sidebar() {
       </div>
 
       {/* Sessions List */}
-      <div className="flex-1 overflow-auto px-2">
+      <div className="flex-1 overflow-auto px-3">
         {/* Active recording entry */}
         {isRecording && (
           <div
-            className="py-2.5 px-2.5 rounded-[7px] mb-0.5"
+            className="py-3 px-3.5 rounded-[7px] mb-1.5"
             style={{ background: 'var(--color-accent-bg)', border: '1px solid var(--color-accent)30' }}
           >
             <div className="flex items-center gap-1.5 mb-1">
@@ -265,11 +265,13 @@ export function Sidebar() {
           <div
             key={s.id}
             onClick={() => handleSessionClick(s.id)}
-            className="py-2.5 px-2.5 rounded-[7px] mb-0.5 cursor-pointer transition-all"
+            className="py-3 px-3.5 rounded-[7px] mb-1.5 cursor-pointer transition-all hover:opacity-90"
             style={{
               background: 'transparent',
               border: '1px solid transparent',
             }}
+            onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--color-bg4)')}
+            onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
           >
             <div className="flex items-center gap-1.5 mb-1">
               <StatusDot color="var(--color-green)" />
@@ -279,7 +281,10 @@ export function Sidebar() {
               <span className="font-mono text-[11px]" style={{ color: 'var(--color-dim)' }}>
                 {s.duration}
               </span>
-              <span className="text-[10px] opacity-60" style={{ color: 'var(--color-text-secondary)' }}>
+              <span
+                className="text-[10px] opacity-60 overflow-hidden text-ellipsis whitespace-nowrap"
+                style={{ color: 'var(--color-text-secondary)', maxWidth: '130px', display: 'inline-block' }}
+              >
                 {s.url}
               </span>
             </div>

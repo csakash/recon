@@ -7,7 +7,7 @@ export function TabBar() {
 
   return (
     <div
-      className="flex items-center h-[32px] shrink-0 overflow-x-auto"
+      className="flex items-center gap-6 h-[36px] px-4 shrink-0 overflow-x-auto"
       style={{ borderBottom: '1px solid var(--color-border)', background: 'var(--color-bg2)' }}
     >
       {tabs.map((tab) => (
@@ -37,17 +37,15 @@ function TabItem({
   return (
     <button
       onClick={onSelect}
-      className="flex items-center gap-1.5 px-3 h-full text-[11px] cursor-pointer shrink-0"
+      className="flex items-center gap-1.5 px-3 py-2 cursor-pointer shrink-0 text-[11px] uppercase tracking-wider transition-all"
       style={{
-        background: isActive ? 'var(--color-bg)' : 'transparent',
-        color: isActive ? 'var(--color-text-primary)' : 'var(--color-dim)',
-        borderRight: '1px solid var(--color-border)',
-        borderBottom: isActive ? '2px solid var(--color-accent)' : '2px solid transparent',
+        background: 'none',
         border: 'none',
-        borderInlineEnd: '1px solid var(--color-border)',
+        borderBottom: isActive ? '2px solid var(--color-accent)' : '2px solid transparent',
+        color: isActive ? 'var(--color-text-primary)' : 'var(--color-dim)',
         fontFamily: 'var(--font-sans)',
-        fontWeight: isActive ? 600 : 400,
-        maxWidth: '180px',
+        fontWeight: isActive ? 600 : 500,
+        letterSpacing: '0.05em',
       }}
     >
       {tab.type === 'browser' ? (
