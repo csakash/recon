@@ -10,6 +10,8 @@ export type ReconAPI = {
 
   // BrowserView positioning
   setBrowserGapBounds: (bounds: { x: number; y: number; width: number; height: number }) => void
+  showBrowserView: () => void
+  hideBrowserView: () => void
 
   // CDP capture
   cdpStart: () => Promise<{ success: boolean; error?: string }>
@@ -20,7 +22,7 @@ export type ReconAPI = {
   onCdpClear: (callback: () => void) => () => void
 
   // Session management
-  sessionCreate: (meta: any) => Promise<{ success: boolean; dir?: string }>
+  sessionCreate: (meta: any) => Promise<{ success: boolean; dir?: string; id?: string }>
   sessionFinalize: (sessionId: string, data: any) => Promise<{ success: boolean }>
   sessionList: () => Promise<{ success: boolean; sessions: any[] }>
   sessionLoad: (sessionId: string) => Promise<{ success: boolean; data: any }>
@@ -59,6 +61,8 @@ const api: ReconAPI = {
   },
 
   setBrowserGapBounds: (bounds) => ipcRenderer.send('browser-gap-bounds', bounds),
+  showBrowserView: () => ipcRenderer.send('browser-view-show'),
+  hideBrowserView: () => ipcRenderer.send('browser-view-hide'),
 
   // CDP capture
   cdpStart: () => ipcRenderer.invoke('cdp:start'),

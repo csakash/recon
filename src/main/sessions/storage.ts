@@ -127,9 +127,11 @@ export function listSessions(): SessionMeta[] {
 }
 
 export async function loadSessionData(sessionId: string): Promise<{
+  meta: SessionMeta | null
   network: any[]
   console: any[]
   interactions: any[]
+  frameCount: number
   report?: string
 } | null> {
   const sessionDir = getSessionDir(sessionId)
@@ -151,10 +153,24 @@ export async function loadSessionData(sessionId: string): Promise<{
     }
   }
 
+  // Count frames
+  let frameCount = 0
+  const framesDir = join(sessionDir, 'frames')
+  if (existsSync(framesDir)) {
+    const files = await readdir(framesDir)
+    frameCount = files.filter((f) => f.endsWith('.png')).length
+  }
+
   return {
+    meta: await readJsonSafe('meta.json').catch(() => null),
     network: await readJsonSafe('network.json'),
     console: await readJsonSafe('console.json'),
     interactions: await readJsonSafe('interactions.json'),
+    frameCount,
     report: await readTextSafe('report.md'),
   }
+}
+
+export function getSessionsDir(): string {
+  return SESSIONS_DIR
 }

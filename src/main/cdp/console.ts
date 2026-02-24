@@ -5,6 +5,7 @@ export interface CdpConsoleEntry {
   type: 'log' | 'warn' | 'error' | 'info'
   msg: string
   src: string
+  ts: number
 }
 
 export class ConsoleCapture {
@@ -75,6 +76,7 @@ export class ConsoleCapture {
       type: level,
       msg,
       src,
+      ts: Date.now(),
     })
   }
 
@@ -94,6 +96,7 @@ export class ConsoleCapture {
       type: 'error',
       msg,
       src,
+      ts: Date.now(),
     })
   }
 
@@ -104,6 +107,7 @@ export class ConsoleCapture {
       type: this.mapLevel(entry.level),
       msg: entry.text || '',
       src: entry.url ? `${entry.url.split('/').pop()}:${entry.lineNumber}` : '',
+      ts: Date.now(),
     })
   }
 

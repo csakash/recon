@@ -5,39 +5,28 @@ import { useAiStore } from '../stores/ai'
 import { useNetworkStore } from '../stores/network'
 import { useConsoleStore } from '../stores/console'
 import { useInteractionsStore } from '../stores/interactions'
+import { useTabsStore } from '../stores/tabs'
+import { useBrowserStore } from '../stores/browser'
 import { StatusDot } from './ui/StatusDot'
 
-const MOCK_AI_MESSAGES = [
-  { role: 'system' as const, text: 'Session recording analyzed. Processing 2m 34s of interaction data...' },
-  { role: 'assistant' as const, text: 'Found 3 critical issues in this session. Generating report...' },
-  {
-    role: 'assistant' as const,
-    text: `## Bug Report: Cart Update Failure
-
-**Severity:** High · **Component:** Cart Service
-
-**Summary:** Cart quantity update fails silently with 500 errors. The root cause appears to be a null cartId after auth token refresh — the session state loses cart association.
-
-**Steps to Reproduce:**
-1. Add item to cart
-2. Navigate to /cart
-3. Click "Update Quantity"
-4. Observe: spinner hangs, 500 on POST /api/v1/cart/update
-
-**Root Cause (probable):** cart.js:142 throws because \`items\` is undefined — the cart object loses its reference after the auth middleware refreshes the session token (auth.js:22 logs success, but cart.js:156 shows cartId is null).
-
-**Suggested Fix:** Persist cartId independently of session token, or re-hydrate cart state after token refresh.`,
-  },
-]
-
 export function Sidebar() {
-  const { status, elapsed, micActive, startRecording, stopRecording, toggleMic, tick } = useRecordingStore()
-  const { sessions, activeSessionId, setActive } = useSessionsStore()
-  const { setMessages, setAnalyzing, addMessage } = useAiStore()
+  const { status, elapsed, micActive, startRecording, stopRecording, setComplete, toggleMic, tick } = useRecordingStore()
+  const { sessions, loadSessions } = useSessionsStore()
+  const { setMessages } = useAiStore()
+  const networkEntries = useNetworkStore((s) => s.entries)
+  const consoleEntries = useConsoleStore((s) => s.entries)
+  const interactionEntries = useInteractionsStore((s) => s.entries)
   const clearNetwork = useNetworkStore((s) => s.clear)
   const clearConsole = useConsoleStore((s) => s.clear)
   const clearInteractions = useInteractionsStore((s) => s.clear)
+  const { openSessionTab, ensureBrowserTab, convertBrowserToSession } = useTabsStore()
+  const currentUrl = useBrowserStore((s) => s.url)
   const isRecording = status === 'recording'
+
+  // Load sessions on mount
+  useEffect(() => {
+    loadSessions()
+  }, [loadSessions])
 
   // Timer tick
   useEffect(() => {
@@ -49,29 +38,89 @@ export function Sidebar() {
   const formatTime = (s: number) =>
     `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`
 
-  const handleStart = () => {
-    startRecording()
-    setMessages([])
+  const formatDuration = (seconds: number): string => {
+    const m = Math.floor(seconds / 60)
+    const s = seconds % 60
+    return `${m}m ${String(s).padStart(2, '0')}s`
+  }
+
+  const handleStart = async () => {
+    // Ensure we're on the browser tab
+    ensureBrowserTab()
+
+    // Create a session
+    const sessionId = crypto.randomUUID()
+    const name = `Session ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+    const result = await window.recon?.sessionCreate({
+      id: sessionId,
+      name,
+      url: currentUrl,
+      startTime: Date.now(),
+    })
+
+    if (!result?.success) return
+
+    // Clear stores and start recording
     clearNetwork()
     clearConsole()
     clearInteractions()
-    // Start CDP capture
-    window.recon?.cdpStart()
+    setMessages([])
+
+    startRecording(sessionId, result.dir || '')
+
+    // Start video capture
+    await window.recon?.captureStartVideo()
   }
 
-  const handleStop = () => {
+  const handleStop = async () => {
+    const recState = useRecordingStore.getState()
+    const sessionId = recState.sessionId
+    const sessionDir = recState.sessionDir
+    const recStartTime = recState.startTime || Date.now()
+
     stopRecording()
-    // Stop CDP capture
-    window.recon?.cdpStop()
-    setAnalyzing(true)
-    addMessage(MOCK_AI_MESSAGES[0])
-    setTimeout(() => {
-      addMessage(MOCK_AI_MESSAGES[1])
-      setTimeout(() => {
-        addMessage(MOCK_AI_MESSAGES[2])
-        setAnalyzing(false)
-      }, 1800)
-    }, 1200)
+
+    // Stop video capture
+    const videoResult = await window.recon?.captureStopVideo()
+
+    // Save video frames
+    if (sessionDir) {
+      await window.recon?.captureSaveVideo(sessionDir)
+    }
+
+    // Normalize timestamps to relative (ms from session start)
+    const relNetwork = networkEntries.map((e) => ({ ...e, ts: e.ts - recStartTime }))
+    const relConsole = consoleEntries.map((e) => ({ ...e, ts: e.ts - recStartTime }))
+    const relInteractions = interactionEntries.map((e) => ({ ...e, ts: e.ts - recStartTime }))
+
+    const durationSec = Math.floor((Date.now() - recStartTime) / 1000)
+
+    // Finalize session
+    if (sessionId) {
+      await window.recon?.sessionFinalize(sessionId, {
+        duration: formatDuration(durationSec),
+        status: 'complete',
+        endTime: Date.now(),
+        network: relNetwork,
+        console: relConsole,
+        interactions: relInteractions,
+      })
+
+      // Convert the current browser tab to a session replay tab
+      const name = `Session ${new Date(recStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+      convertBrowserToSession(sessionId, name)
+
+      // Reload sessions list
+      await loadSessions()
+    }
+
+    setComplete()
+  }
+
+  const handleSessionClick = (id: string) => {
+    const session = sessions.find((s) => s.id === id)
+    if (!session) return
+    openSessionTab(session.id, session.name)
   }
 
   return (
@@ -173,11 +222,11 @@ export function Sidebar() {
         {sessions.map((s) => (
           <div
             key={s.id}
-            onClick={() => setActive(s.id)}
+            onClick={() => handleSessionClick(s.id)}
             className="py-2.5 px-2.5 rounded-[7px] mb-0.5 cursor-pointer transition-all"
             style={{
-              background: activeSessionId === s.id ? 'var(--color-bg4)' : 'transparent',
-              border: `1px solid ${activeSessionId === s.id ? 'var(--color-border2)' : 'transparent'}`,
+              background: 'transparent',
+              border: '1px solid transparent',
             }}
           >
             <div className="flex items-center gap-1.5 mb-1">
@@ -194,6 +243,14 @@ export function Sidebar() {
             </div>
           </div>
         ))}
+
+        {sessions.length === 0 && !isRecording && (
+          <div className="py-8 text-center text-[11px]" style={{ color: 'var(--color-dim)' }}>
+            No sessions yet.
+            <br />
+            Start recording to capture a session.
+          </div>
+        )}
       </div>
 
       {/* Bottom Status */}

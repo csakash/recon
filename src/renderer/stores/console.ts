@@ -5,6 +5,7 @@ export interface ConsoleEntry {
   type: 'log' | 'warn' | 'error' | 'info'
   msg: string
   src: string
+  ts: number
 }
 
 interface ConsoleState {

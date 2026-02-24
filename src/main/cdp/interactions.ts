@@ -6,6 +6,7 @@ export interface CdpInteractionEntry {
   action: string
   target: string
   selector: string
+  ts: number
 }
 
 // Script injected into the target page to track user interactions
@@ -124,6 +125,7 @@ export class InteractionCapture {
               action: data.action,
               target: data.target,
               selector: data.selector,
+              ts: Date.now(),
             })
           } catch {}
         }

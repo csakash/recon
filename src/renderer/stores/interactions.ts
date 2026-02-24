@@ -6,6 +6,7 @@ export interface InteractionEntry {
   action: string
   target: string
   selector: string
+  ts: number
 }
 
 interface InteractionsState {

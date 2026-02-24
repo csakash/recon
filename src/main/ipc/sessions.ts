@@ -5,7 +5,7 @@ export function setupSessionIpc(): void {
   ipcMain.handle('session:create', async (_event, meta) => {
     try {
       const dir = await createSession(meta)
-      return { success: true, dir }
+      return { success: true, dir, id: meta.id }
     } catch (err: any) {
       return { success: false, error: err.message }
     }

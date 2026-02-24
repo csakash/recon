@@ -1,12 +1,19 @@
-import { app, BrowserWindow, WebContentsView, ipcMain, shell } from 'electron'
+import { app, BrowserWindow, WebContentsView, ipcMain, shell, protocol, net } from 'electron'
 import { join } from 'path'
+import { pathToFileURL } from 'url'
 import { setupCdpIpc } from './ipc/cdp'
 import { setupSessionIpc } from './ipc/sessions'
 import { setupCaptureIpc } from './ipc/capture'
 import { setupAiIpc } from './ipc/ai'
+import { getSessionsDir } from './sessions/storage'
 
 let mainWindow: BrowserWindow | null = null
 let embeddedView: WebContentsView | null = null
+
+// Register custom protocol scheme before app is ready
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'recon-session', privileges: { bypassCSP: true, supportFetchAPI: true, standard: true } }
+])
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -39,6 +46,18 @@ function createWindow(): void {
   ipcMain.on('browser-gap-bounds', (_event, bounds: { x: number; y: number; width: number; height: number }) => {
     if (embeddedView) {
       embeddedView.setBounds(bounds)
+    }
+  })
+
+  // Show/hide embedded browser (for switching between live browser and session replay)
+  ipcMain.on('browser-view-show', () => {
+    if (embeddedView && mainWindow) {
+      mainWindow.contentView.addChildView(embeddedView)
+    }
+  })
+  ipcMain.on('browser-view-hide', () => {
+    if (embeddedView && mainWindow) {
+      mainWindow.contentView.removeChildView(embeddedView)
     }
   })
 
@@ -122,6 +141,13 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  // Register custom protocol to serve session frame files
+  protocol.handle('recon-session', (request) => {
+    const urlPath = request.url.replace('recon-session://', '')
+    const filePath = join(getSessionsDir(), urlPath)
+    return net.fetch(pathToFileURL(filePath).toString())
+  })
+
   createWindow()
 
   app.on('activate', () => {

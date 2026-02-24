@@ -1,7 +1,7 @@
 import { useThemeStore } from '../stores/theme'
-import { useNetworkStore } from '../stores/network'
-import { useConsoleStore } from '../stores/console'
-import { useInteractionsStore } from '../stores/interactions'
+import { useNetworkStore, NetworkEntry } from '../stores/network'
+import { useConsoleStore, ConsoleEntry } from '../stores/console'
+import { useInteractionsStore, InteractionEntry } from '../stores/interactions'
 
 function NetworkStatusBadge({ status }: { status: number }) {
   const color =
@@ -27,13 +27,34 @@ function EmptyState({ message }: { message: string }) {
 
 type Tab = 'network' | 'console' | 'interactions'
 
-export function DevToolsPanel({ activeTab, onTabChange }: { activeTab: Tab; onTabChange: (t: Tab) => void }) {
+interface DevToolsPanelProps {
+  activeTab: Tab
+  onTabChange: (t: Tab) => void
+  replayMode?: boolean
+  replayNetwork?: NetworkEntry[]
+  replayConsole?: ConsoleEntry[]
+  replayInteractions?: InteractionEntry[]
+}
+
+export function DevToolsPanel({
+  activeTab,
+  onTabChange,
+  replayMode = false,
+  replayNetwork = [],
+  replayConsole = [],
+  replayInteractions = [],
+}: DevToolsPanelProps) {
   const { theme } = useThemeStore()
   const isDark = theme === 'dark'
 
-  const networkData = useNetworkStore((s) => s.entries)
-  const consoleData = useConsoleStore((s) => s.entries)
-  const interactionData = useInteractionsStore((s) => s.entries)
+  const liveNetwork = useNetworkStore((s) => s.entries)
+  const liveConsole = useConsoleStore((s) => s.entries)
+  const liveInteractions = useInteractionsStore((s) => s.entries)
+
+  // Use replay data when in replay mode, otherwise live data
+  const networkData = replayMode ? replayNetwork : liveNetwork
+  const consoleData = replayMode ? replayConsole : liveConsole
+  const interactionData = replayMode ? replayInteractions : liveInteractions
 
   const tabs: { id: Tab; label: string; count: number }[] = [
     { id: 'network', label: 'Network', count: networkData.length },

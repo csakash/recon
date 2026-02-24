@@ -8,6 +8,7 @@ export interface CdpNetworkEntry {
   time: string
   size: string
   type: string
+  ts: number
   requestHeaders?: Record<string, string>
   responseHeaders?: Record<string, string>
   timing?: Record<string, number>
@@ -112,6 +113,7 @@ export class NetworkCapture {
       time: timeStr,
       size: sizeStr,
       type: req.type,
+      ts: Date.now(),
     })
   }
 
@@ -137,6 +139,7 @@ export class NetworkCapture {
       time: errorText || 'failed',
       size: '—',
       type: req.type,
+      ts: Date.now(),
     })
   }
 }

@@ -8,6 +8,7 @@ export interface NetworkEntry {
   time: string
   size: string
   type: string
+  ts: number
 }
 
 interface NetworkState {
