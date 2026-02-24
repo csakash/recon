@@ -3,6 +3,7 @@ import { join } from 'path'
 import { setupCdpIpc } from './ipc/cdp'
 import { setupSessionIpc } from './ipc/sessions'
 import { setupCaptureIpc } from './ipc/capture'
+import { setupAiIpc } from './ipc/ai'
 
 let mainWindow: BrowserWindow | null = null
 let browserView: BrowserView | null = null
@@ -82,6 +83,9 @@ function createWindow(): void {
   // Wire up session and capture IPC
   setupSessionIpc()
   setupCaptureIpc(mainWindow, browserView)
+
+  // Wire up AI IPC
+  setupAiIpc(mainWindow)
 
   // Load renderer
   if (process.env.NODE_ENV === 'development' && process.env['ELECTRON_RENDERER_URL']) {

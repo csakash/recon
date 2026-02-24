@@ -1,9 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, KeyboardEvent } from 'react'
 import { useAiStore } from '../stores/ai'
 import { useRecordingStore } from '../stores/recording'
 
 export function AiTerminal() {
-  const { messages, isAnalyzing, input, setInput } = useAiStore()
+  const { messages, isAnalyzing, input, setInput, addMessage } = useAiStore()
   const { status } = useRecordingStore()
   const termRef = useRef<HTMLDivElement>(null)
   const isRecording = status === 'recording'
@@ -11,6 +11,28 @@ export function AiTerminal() {
   useEffect(() => {
     if (termRef.current) termRef.current.scrollTop = termRef.current.scrollHeight
   }, [messages])
+
+  // Listen for AI messages from main process
+  useEffect(() => {
+    const cleanups: (() => void)[] = []
+    if (window.recon) {
+      cleanups.push(window.recon.onAiMessage((msg) => {
+        addMessage({ role: msg.role as 'system' | 'assistant', text: msg.text })
+      }))
+    }
+    return () => cleanups.forEach((fn) => fn())
+  }, [addMessage])
+
+  const handleSend = () => {
+    if (!input.trim()) return
+    addMessage({ role: 'user', text: input })
+    window.recon?.aiChat(input, '')
+    setInput('')
+  }
+
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') handleSend()
+  }
 
   return (
     <div
@@ -112,10 +134,12 @@ export function AiTerminal() {
           placeholder="Ask about the session or request a bug report..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onKeyDown={handleKeyDown}
           className="flex-1 bg-transparent border-none text-xs font-mono outline-none"
           style={{ color: 'var(--color-text-primary)' }}
         />
         <button
+          onClick={handleSend}
           className="px-2.5 py-1 text-[10px] font-mono rounded-[5px] border cursor-pointer"
           style={{
             background: 'var(--color-bg4)',

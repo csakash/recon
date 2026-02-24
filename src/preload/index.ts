@@ -36,6 +36,14 @@ export type ReconAPI = {
   sendAudioChunk: (chunk: ArrayBuffer) => void
   onAudioStart: (callback: () => void) => () => void
   onAudioStop: (callback: () => void) => () => void
+
+  // AI
+  aiConfigure: (config: { provider: string; apiKey?: string; model?: string; command?: string }) => Promise<{ success: boolean }>
+  aiAnalyze: (sessionData: any) => Promise<{ success: boolean; report?: string }>
+  aiChat: (message: string, context: string) => Promise<{ success: boolean }>
+  onAiMessage: (callback: (msg: { role: string; text: string }) => void) => () => void
+  onAiToken: (callback: (token: string) => void) => () => void
+  onAiAgentStatus: (callback: (status: { name: string; status: string }) => void) => () => void
 }
 
 const api: ReconAPI = {
@@ -95,6 +103,26 @@ const api: ReconAPI = {
     const handler = () => callback()
     ipcRenderer.on('audio:stop', handler)
     return () => ipcRenderer.removeListener('audio:stop', handler)
+  },
+
+  // AI
+  aiConfigure: (config) => ipcRenderer.invoke('ai:configure', config),
+  aiAnalyze: (sessionData) => ipcRenderer.invoke('ai:analyze', sessionData),
+  aiChat: (message, context) => ipcRenderer.invoke('ai:chat', message, context),
+  onAiMessage: (callback) => {
+    const handler = (_event: Electron.IpcRendererEvent, msg: any) => callback(msg)
+    ipcRenderer.on('ai:message', handler)
+    return () => ipcRenderer.removeListener('ai:message', handler)
+  },
+  onAiToken: (callback) => {
+    const handler = (_event: Electron.IpcRendererEvent, token: string) => callback(token)
+    ipcRenderer.on('ai:token', handler)
+    return () => ipcRenderer.removeListener('ai:token', handler)
+  },
+  onAiAgentStatus: (callback) => {
+    const handler = (_event: Electron.IpcRendererEvent, status: any) => callback(status)
+    ipcRenderer.on('ai:agent-status', handler)
+    return () => ipcRenderer.removeListener('ai:agent-status', handler)
   },
 }
 
