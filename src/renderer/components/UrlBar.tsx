@@ -47,6 +47,7 @@ export function UrlBar() {
           <path d="M7 11V7a5 5 0 0 1 10 0v4" />
         </svg>
         <input
+          data-url-input
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}

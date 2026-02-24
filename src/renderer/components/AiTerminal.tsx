@@ -36,12 +36,8 @@ export function AiTerminal() {
 
   return (
     <div
-      className="flex flex-col shrink-0 transition-all"
-      style={{
-        height: messages.length > 2 ? 220 : 160,
-        borderTop: '1px solid var(--color-border)',
-        background: 'var(--color-bg2)',
-      }}
+      className="flex flex-col h-full"
+      style={{ background: 'var(--color-bg2)' }}
     >
       {/* Header */}
       <div
