@@ -1,6 +1,6 @@
 import { app, BrowserWindow, WebContentsView, ipcMain, shell, protocol, net } from 'electron'
 import { join } from 'path'
-import { pathToFileURL } from 'url'
+import { readFileSync, existsSync } from 'fs'
 import { setupCdpIpc } from './ipc/cdp'
 import { setupSessionIpc } from './ipc/sessions'
 import { setupCaptureIpc } from './ipc/capture'
@@ -143,9 +143,32 @@ function createWindow(): void {
 app.whenReady().then(() => {
   // Register custom protocol to serve session frame files
   protocol.handle('recon-session', (request) => {
-    const urlPath = request.url.replace('recon-session://', '')
-    const filePath = join(getSessionsDir(), urlPath)
-    return net.fetch(pathToFileURL(filePath).toString())
+    try {
+      const url = new URL(request.url)
+      // URL format: recon-session://sessionId/frames/frame-00000.png
+      const sessionId = url.hostname
+      const filePath = join(getSessionsDir(), sessionId, url.pathname)
+
+      if (!existsSync(filePath)) {
+        return new Response('Not found', { status: 404 })
+      }
+
+      const data = readFileSync(filePath)
+      const ext = filePath.split('.').pop()?.toLowerCase()
+      const mimeTypes: Record<string, string> = {
+        png: 'image/png',
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+        webm: 'video/webm',
+        json: 'application/json',
+      }
+      return new Response(data, {
+        headers: { 'Content-Type': mimeTypes[ext || ''] || 'application/octet-stream' }
+      })
+    } catch (err) {
+      console.error('Protocol handler error:', err)
+      return new Response('Error', { status: 500 })
+    }
   })
 
   createWindow()
