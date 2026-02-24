@@ -18,7 +18,7 @@ export function SessionReplay({ sessionId, frameCount, duration, onTimeUpdate }:
 
   const getFrameSrc = useCallback(
     (frameIdx: number) => {
-      const padded = String(frameIdx + 1).padStart(5, '0')
+      const padded = String(frameIdx).padStart(5, '0')
       return `recon-session://${sessionId}/frames/frame-${padded}.png`
     },
     [sessionId]

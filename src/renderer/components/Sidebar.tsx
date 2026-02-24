@@ -45,76 +45,113 @@ export function Sidebar() {
   }
 
   const handleStart = async () => {
-    // Ensure we're on the browser tab
-    ensureBrowserTab()
+    try {
+      // Ensure we're on the browser tab
+      ensureBrowserTab()
 
-    // Create a session
-    const sessionId = crypto.randomUUID()
-    const name = `Session ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-    const result = await window.recon?.sessionCreate({
-      id: sessionId,
-      name,
-      url: currentUrl,
-      startTime: Date.now(),
-    })
+      const sessionId = crypto.randomUUID()
+      const name = `Session ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
 
-    if (!result?.success) return
+      // Clear stores first
+      clearNetwork()
+      clearConsole()
+      clearInteractions()
+      setMessages([])
 
-    // Clear stores and start recording
-    clearNetwork()
-    clearConsole()
-    clearInteractions()
-    setMessages([])
+      // Restart CDP to get a clean slate for this recording
+      await window.recon?.cdpStart()
 
-    startRecording(sessionId, result.dir || '')
+      // Create a session on disk
+      let dir = ''
+      try {
+        const result = await window.recon?.sessionCreate({
+          id: sessionId,
+          name,
+          url: currentUrl || '',
+          startTime: Date.now(),
+        })
+        dir = result?.dir || ''
+      } catch (err) {
+        console.error('Session creation failed:', err)
+      }
 
-    // Start video capture
-    await window.recon?.captureStartVideo()
+      // Start recording state (do this even if session dir failed)
+      startRecording(sessionId, dir)
+
+      // Start video capture
+      try {
+        await window.recon?.captureStartVideo()
+      } catch (err) {
+        console.error('Video capture failed to start:', err)
+      }
+    } catch (err) {
+      console.error('Failed to start recording:', err)
+    }
   }
 
   const handleStop = async () => {
-    const recState = useRecordingStore.getState()
-    const sessionId = recState.sessionId
-    const sessionDir = recState.sessionDir
-    const recStartTime = recState.startTime || Date.now()
+    try {
+      const recState = useRecordingStore.getState()
+      const sessionId = recState.sessionId
+      let sessionDir = recState.sessionDir
+      const recStartTime = recState.startTime || Date.now()
 
-    stopRecording()
+      stopRecording()
 
-    // Stop video capture
-    const videoResult = await window.recon?.captureStopVideo()
+      // Stop video capture
+      await window.recon?.captureStopVideo()
 
-    // Save video frames
-    if (sessionDir) {
-      await window.recon?.captureSaveVideo(sessionDir)
+      // If we don't have a session dir, try creating one now
+      if (!sessionDir && sessionId) {
+        try {
+          const result = await window.recon?.sessionCreate({
+            id: sessionId,
+            name: `Session ${new Date(recStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+            url: currentUrl || '',
+            startTime: recStartTime,
+          })
+          sessionDir = result?.dir || ''
+        } catch (err) {
+          console.error('Late session creation failed:', err)
+        }
+      }
+
+      // Save video frames
+      if (sessionDir) {
+        await window.recon?.captureSaveVideo(sessionDir)
+      }
+
+      // Normalize timestamps to relative (ms from session start)
+      const relNetwork = networkEntries.map((e) => ({ ...e, ts: e.ts - recStartTime }))
+      const relConsole = consoleEntries.map((e) => ({ ...e, ts: e.ts - recStartTime }))
+      const relInteractions = interactionEntries.map((e) => ({ ...e, ts: e.ts - recStartTime }))
+
+      const durationSec = Math.floor((Date.now() - recStartTime) / 1000)
+
+      // Finalize session
+      if (sessionId && sessionDir) {
+        await window.recon?.sessionFinalize(sessionId, {
+          duration: formatDuration(durationSec),
+          status: 'complete',
+          endTime: Date.now(),
+          network: relNetwork,
+          console: relConsole,
+          interactions: relInteractions,
+        })
+
+        // Convert the current browser tab to a session replay tab
+        const name = `Session ${new Date(recStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+        convertBrowserToSession(sessionId, name)
+
+        // Reload sessions list
+        await loadSessions()
+      }
+
+      setComplete()
+    } catch (err) {
+      console.error('Failed to stop recording:', err)
+      setComplete()
     }
-
-    // Normalize timestamps to relative (ms from session start)
-    const relNetwork = networkEntries.map((e) => ({ ...e, ts: e.ts - recStartTime }))
-    const relConsole = consoleEntries.map((e) => ({ ...e, ts: e.ts - recStartTime }))
-    const relInteractions = interactionEntries.map((e) => ({ ...e, ts: e.ts - recStartTime }))
-
-    const durationSec = Math.floor((Date.now() - recStartTime) / 1000)
-
-    // Finalize session
-    if (sessionId) {
-      await window.recon?.sessionFinalize(sessionId, {
-        duration: formatDuration(durationSec),
-        status: 'complete',
-        endTime: Date.now(),
-        network: relNetwork,
-        console: relConsole,
-        interactions: relInteractions,
-      })
-
-      // Convert the current browser tab to a session replay tab
-      const name = `Session ${new Date(recStartTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-      convertBrowserToSession(sessionId, name)
-
-      // Reload sessions list
-      await loadSessions()
-    }
-
-    setComplete()
   }
 
   const handleSessionClick = (id: string) => {

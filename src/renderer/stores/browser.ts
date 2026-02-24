@@ -6,6 +6,6 @@ interface BrowserState {
 }
 
 export const useBrowserStore = create<BrowserState>((set) => ({
-  url: 'https://app.acme.io/cart',
+  url: '',
   setUrl: (url) => set({ url }),
 }))

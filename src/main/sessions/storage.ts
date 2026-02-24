@@ -60,12 +60,16 @@ export async function createSession(meta: SessionMeta): Promise<string> {
   // Save meta.json
   await writeFile(join(sessionDir, 'meta.json'), JSON.stringify(meta, null, 2))
 
-  // Insert into SQLite
-  const dbInstance = getDb()
-  dbInstance.prepare(`
-    INSERT INTO sessions (id, name, url, duration, status, start_time)
-    VALUES (?, ?, ?, '', 'recording', ?)
-  `).run(meta.id, meta.name, meta.url, meta.startTime)
+  // Insert into SQLite (non-critical — session dir is the source of truth)
+  try {
+    const dbInstance = getDb()
+    dbInstance.prepare(`
+      INSERT OR REPLACE INTO sessions (id, name, url, duration, status, start_time)
+      VALUES (?, ?, ?, '', 'recording', ?)
+    `).run(meta.id, meta.name, meta.url || '', meta.startTime)
+  } catch (err) {
+    console.error('SQLite insert failed (non-critical):', err)
+  }
 
   return sessionDir
 }
@@ -101,29 +105,56 @@ export async function finalizeSession(
   })
   await writeFile(metaPath, JSON.stringify(meta, null, 2))
 
-  // Update SQLite
-  const dbInstance = getDb()
-  dbInstance.prepare(`
-    UPDATE sessions SET
-      duration = ?, status = ?, end_time = ?,
-      network_count = ?, console_count = ?, interaction_count = ?
-    WHERE id = ?
-  `).run(
-    data.duration, data.status, data.endTime,
-    data.network.length, data.console.length, data.interactions.length,
-    sessionId
-  )
+  // Update SQLite (non-critical)
+  try {
+    const dbInstance = getDb()
+    dbInstance.prepare(`
+      INSERT OR REPLACE INTO sessions (id, name, url, duration, status, start_time, end_time, network_count, console_count, interaction_count)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      sessionId, meta.name, meta.url || '', data.duration, data.status,
+      meta.startTime, data.endTime,
+      data.network.length, data.console.length, data.interactions.length
+    )
+  } catch (err) {
+    console.error('SQLite update failed (non-critical):', err)
+  }
 }
 
 export function listSessions(): SessionMeta[] {
-  const dbInstance = getDb()
-  const rows = dbInstance.prepare(`
-    SELECT id, name, url, duration, status, start_time as startTime,
-           end_time as endTime, network_count as networkCount,
-           console_count as consoleCount, interaction_count as interactionCount
-    FROM sessions ORDER BY start_time DESC
-  `).all() as SessionMeta[]
-  return rows
+  try {
+    const dbInstance = getDb()
+    const rows = dbInstance.prepare(`
+      SELECT id, name, url, duration, status, start_time as startTime,
+             end_time as endTime, network_count as networkCount,
+             console_count as consoleCount, interaction_count as interactionCount
+      FROM sessions ORDER BY start_time DESC
+    `).all() as SessionMeta[]
+    return rows
+  } catch (err) {
+    console.error('SQLite list failed, falling back to filesystem:', err)
+    return listSessionsFromFilesystem()
+  }
+}
+
+function listSessionsFromFilesystem(): SessionMeta[] {
+  try {
+    if (!existsSync(SESSIONS_DIR)) return []
+    const dirs = require('fs').readdirSync(SESSIONS_DIR) as string[]
+    const sessions: SessionMeta[] = []
+    for (const dir of dirs) {
+      const metaPath = join(SESSIONS_DIR, dir, 'meta.json')
+      if (existsSync(metaPath)) {
+        try {
+          const meta = JSON.parse(require('fs').readFileSync(metaPath, 'utf-8'))
+          sessions.push(meta)
+        } catch { /* skip corrupted */ }
+      }
+    }
+    return sessions.sort((a, b) => (b.startTime || 0) - (a.startTime || 0))
+  } catch {
+    return []
+  }
 }
 
 export async function loadSessionData(sessionId: string): Promise<{
