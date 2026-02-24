@@ -17,6 +17,25 @@ export type ReconAPI = {
   onNetworkEntry: (callback: (entry: any) => void) => () => void
   onConsoleEntry: (callback: (entry: any) => void) => () => void
   onInteractionEntry: (callback: (entry: any) => void) => () => void
+
+  // Session management
+  sessionCreate: (meta: any) => Promise<{ success: boolean; dir?: string }>
+  sessionFinalize: (sessionId: string, data: any) => Promise<{ success: boolean }>
+  sessionList: () => Promise<{ success: boolean; sessions: any[] }>
+  sessionLoad: (sessionId: string) => Promise<{ success: boolean; data: any }>
+
+  // Capture
+  captureStartVideo: () => Promise<{ success: boolean }>
+  captureStopVideo: () => Promise<{ success: boolean; frameCount?: number }>
+  captureSaveVideo: (sessionDir: string) => Promise<{ success: boolean; framesDir?: string }>
+  captureStartAudio: () => Promise<{ success: boolean }>
+  captureStopAudio: () => Promise<{ success: boolean }>
+  captureSaveAudio: (sessionDir: string) => Promise<{ success: boolean; path?: string }>
+
+  // Audio chunk sending (renderer → main)
+  sendAudioChunk: (chunk: ArrayBuffer) => void
+  onAudioStart: (callback: () => void) => () => void
+  onAudioStop: (callback: () => void) => () => void
 }
 
 const api: ReconAPI = {
@@ -49,6 +68,33 @@ const api: ReconAPI = {
     const handler = (_event: Electron.IpcRendererEvent, entry: any) => callback(entry)
     ipcRenderer.on('cdp:interaction-entry', handler)
     return () => ipcRenderer.removeListener('cdp:interaction-entry', handler)
+  },
+
+  // Session management
+  sessionCreate: (meta) => ipcRenderer.invoke('session:create', meta),
+  sessionFinalize: (sessionId, data) => ipcRenderer.invoke('session:finalize', sessionId, data),
+  sessionList: () => ipcRenderer.invoke('session:list'),
+  sessionLoad: (sessionId) => ipcRenderer.invoke('session:load', sessionId),
+
+  // Capture
+  captureStartVideo: () => ipcRenderer.invoke('capture:start-video'),
+  captureStopVideo: () => ipcRenderer.invoke('capture:stop-video'),
+  captureSaveVideo: (sessionDir) => ipcRenderer.invoke('capture:save-video', sessionDir),
+  captureStartAudio: () => ipcRenderer.invoke('capture:start-audio'),
+  captureStopAudio: () => ipcRenderer.invoke('capture:stop-audio'),
+  captureSaveAudio: (sessionDir) => ipcRenderer.invoke('capture:save-audio', sessionDir),
+
+  // Audio chunk sending
+  sendAudioChunk: (chunk) => ipcRenderer.send('audio:chunk', chunk),
+  onAudioStart: (callback) => {
+    const handler = () => callback()
+    ipcRenderer.on('audio:start', handler)
+    return () => ipcRenderer.removeListener('audio:start', handler)
+  },
+  onAudioStop: (callback) => {
+    const handler = () => callback()
+    ipcRenderer.on('audio:stop', handler)
+    return () => ipcRenderer.removeListener('audio:stop', handler)
   },
 }
 

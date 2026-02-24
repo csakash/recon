@@ -1,6 +1,8 @@
 import { app, BrowserWindow, BrowserView, ipcMain, shell } from 'electron'
 import { join } from 'path'
 import { setupCdpIpc } from './ipc/cdp'
+import { setupSessionIpc } from './ipc/sessions'
+import { setupCaptureIpc } from './ipc/capture'
 
 let mainWindow: BrowserWindow | null = null
 let browserView: BrowserView | null = null
@@ -76,6 +78,10 @@ function createWindow(): void {
 
   // Wire up CDP IPC
   setupCdpIpc(mainWindow, browserView)
+
+  // Wire up session and capture IPC
+  setupSessionIpc()
+  setupCaptureIpc(mainWindow, browserView)
 
   // Load renderer
   if (process.env.NODE_ENV === 'development' && process.env['ELECTRON_RENDERER_URL']) {
