@@ -37,6 +37,7 @@ export type ReconAPI = {
 
   // Audio chunk sending (renderer → main)
   sendAudioChunk: (chunk: ArrayBuffer) => void
+  sendAudioStopped: () => void
   onAudioStart: (callback: () => void) => () => void
   onAudioStop: (callback: () => void) => () => void
 
@@ -104,6 +105,7 @@ const api: ReconAPI = {
 
   // Audio chunk sending
   sendAudioChunk: (chunk) => ipcRenderer.send('audio:chunk', chunk),
+  sendAudioStopped: () => ipcRenderer.send('audio:stopped'),
   onAudioStart: (callback) => {
     const handler = () => callback()
     ipcRenderer.on('audio:start', handler)

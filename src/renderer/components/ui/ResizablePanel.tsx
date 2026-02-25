@@ -5,6 +5,7 @@ interface ResizablePanelProps {
   minSize: number
   maxSize: number
   defaultSize: number
+  handleSide?: 'start' | 'end'
   children: ReactNode
   className?: string
   style?: React.CSSProperties
@@ -15,6 +16,7 @@ export function ResizablePanel({
   minSize,
   maxSize,
   defaultSize,
+  handleSide = 'start',
   children,
   className,
   style,
@@ -66,8 +68,12 @@ export function ResizablePanel({
         className="absolute z-10"
         style={{
           ...(direction === 'vertical'
-            ? { top: 0, left: 0, right: 0, height: 4, cursor: 'ns-resize' }
-            : { top: 0, bottom: 0, left: 0, width: 4, cursor: 'ew-resize' }),
+            ? (handleSide === 'end'
+                ? { bottom: 0, left: 0, right: 0, height: 4, cursor: 'ns-resize' }
+                : { top: 0, left: 0, right: 0, height: 4, cursor: 'ns-resize' })
+            : (handleSide === 'end'
+                ? { top: 0, bottom: 0, right: 0, width: 4, cursor: 'ew-resize' }
+                : { top: 0, bottom: 0, left: 0, width: 4, cursor: 'ew-resize' })),
         }}
       />
       {children}

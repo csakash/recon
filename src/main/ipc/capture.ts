@@ -42,7 +42,7 @@ export function setupCaptureIpc(mainWindow: BrowserWindow, embeddedView: WebCont
 
   ipcMain.handle('capture:start-audio', async () => {
     try {
-      audioCapture?.start()
+      await audioCapture?.start()
       return { success: true }
     } catch (err: any) {
       return { success: false, error: err.message }
@@ -51,7 +51,7 @@ export function setupCaptureIpc(mainWindow: BrowserWindow, embeddedView: WebCont
 
   ipcMain.handle('capture:stop-audio', async () => {
     try {
-      audioCapture?.stop()
+      await audioCapture?.stop()
       return { success: true }
     } catch (err: any) {
       return { success: false, error: err.message }

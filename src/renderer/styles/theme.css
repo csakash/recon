@@ -21,6 +21,8 @@
   --color-surface: #18181b;
   --color-hover: #ffffff08;
 
+  --color-outer-bg: #000000;
+
   --font-sans: 'DM Sans', 'Söhne', -apple-system, sans-serif;
   --font-mono: 'DM Mono', ui-monospace, monospace;
 }
@@ -45,6 +47,7 @@
   --color-yellow: #ca8a04;
   --color-surface: #ececea;
   --color-hover: #00000006;
+  --color-outer-bg: #c8c8c0;
 }
 
 @keyframes blink {
@@ -72,7 +75,7 @@ input::placeholder { color: var(--color-dim); }
 
 body {
   font-family: var(--font-sans);
-  background: var(--color-bg);
+  background: var(--color-outer-bg);
   color: var(--color-text-primary);
   font-size: 13px;
   overflow: hidden;

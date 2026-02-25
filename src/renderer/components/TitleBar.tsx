@@ -18,7 +18,7 @@ export function TitleBar() {
       {/* Left: traffic light spacer + brand */}
       <div className="flex items-center gap-3" style={{ WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
         {/* Traffic light spacer (macOS) */}
-        <div className="w-[68px]" />
+        <div className="w-[58px]" />
         <div className="flex items-center gap-1.5">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--color-accent)" strokeWidth="2.5" strokeLinecap="round">
             <circle cx="12" cy="12" r="3" />

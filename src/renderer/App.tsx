@@ -13,6 +13,7 @@ import { useInteractionsStore, InteractionEntry } from './stores/interactions'
 import { useBrowserStore } from './stores/browser'
 import { useRecordingStore } from './stores/recording'
 import { useTabsStore } from './stores/tabs'
+import { useAudioCapture } from './lib/useAudioCapture'
 
 interface SessionData {
   network: NetworkEntry[]
@@ -33,6 +34,9 @@ export default function App() {
   const setUrl = useBrowserStore((s) => s.setUrl)
   const { status, startRecording, stopRecording } = useRecordingStore()
   const { tabs, activeTabId } = useTabsStore()
+
+  // Bridge main-process audio commands with browser MediaRecorder
+  useAudioCapture()
 
   const activeTab = tabs.find((t) => t.id === activeTabId)
   const isBrowserActive = activeTab?.type === 'browser'
@@ -138,11 +142,22 @@ export default function App() {
   }, [status, startRecording, stopRecording])
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden">
+    <div className="h-screen w-screen p-2 pt-0 overflow-hidden" style={{ background: 'var(--color-outer-bg)' }}>
+      <div className="h-full flex flex-col overflow-hidden rounded-b-xl" style={{ background: 'var(--color-bg2)' }}>
       <TitleBar />
 
       <div className="flex-1 flex overflow-hidden min-h-0">
-        <Sidebar />
+        <ResizablePanel
+          direction="horizontal"
+          minSize={180}
+          maxSize={400}
+          defaultSize={240}
+          handleSide="end"
+          className="shrink-0"
+          style={{ borderRight: '1px solid var(--color-border)', background: 'var(--color-bg2)' }}
+        >
+          <Sidebar />
+        </ResizablePanel>
 
         {/* Center + Bottom */}
         <div className="flex-1 flex flex-col min-w-0">
@@ -189,6 +204,7 @@ export default function App() {
             />
           </ResizablePanel>
         </div>
+      </div>
       </div>
     </div>
   )

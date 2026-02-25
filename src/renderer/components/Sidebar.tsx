@@ -89,6 +89,15 @@ export function Sidebar() {
       } catch (err) {
         console.error('Video capture failed to start:', err)
       }
+
+      // Start audio capture if mic is active
+      if (useRecordingStore.getState().micActive) {
+        try {
+          await window.recon?.captureStartAudio()
+        } catch (err) {
+          console.error('Audio capture failed to start:', err)
+        }
+      }
     } catch (err) {
       console.error('Failed to start recording:', err)
     }
@@ -106,6 +115,9 @@ export function Sidebar() {
       // Stop video capture
       await window.recon?.captureStopVideo()
 
+      // Stop audio capture
+      await window.recon?.captureStopAudio()
+
       // If we don't have a session dir, try creating one now
       if (!sessionDir && sessionId) {
         try {
@@ -121,9 +133,10 @@ export function Sidebar() {
         }
       }
 
-      // Save video frames
+      // Save video frames and audio
       if (sessionDir) {
         await window.recon?.captureSaveVideo(sessionDir)
+        await window.recon?.captureSaveAudio(sessionDir)
       }
 
       // Normalize timestamps to relative (ms from session start)
@@ -167,11 +180,11 @@ export function Sidebar() {
 
   return (
     <div
-      className="w-[240px] border-r flex flex-col shrink-0"
-      style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg2)' }}
+      className="flex flex-col h-full min-w-0"
+      style={{ background: 'var(--color-bg2)' }}
     >
       {/* Record Button */}
-      <div className="p-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+      <div className="px-5 py-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
         {!isRecording ? (
           <button
             onClick={handleStart}
@@ -205,7 +218,16 @@ export function Sidebar() {
               Stop
             </button>
             <button
-              onClick={toggleMic}
+              onClick={async () => {
+                toggleMic()
+                // Toggle audio capture mid-recording
+                const willBeActive = !micActive
+                if (willBeActive) {
+                  await window.recon?.captureStartAudio()
+                } else {
+                  await window.recon?.captureStopAudio()
+                }
+              }}
               className="w-10 rounded-lg border cursor-pointer flex items-center justify-center"
               style={{
                 background: micActive ? 'var(--color-accent-bg)' : 'var(--color-bg4)',
@@ -224,7 +246,7 @@ export function Sidebar() {
       </div>
 
       {/* Sessions Header */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2">
+      <div className="flex items-center justify-between px-5 pt-3 pb-2">
         <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-dim)' }}>
           Sessions
         </span>
@@ -237,7 +259,7 @@ export function Sidebar() {
       </div>
 
       {/* Sessions List */}
-      <div className="flex-1 overflow-auto px-3">
+      <div className="flex-1 overflow-auto px-4">
         {/* Active recording entry */}
         {isRecording && (
           <div
@@ -302,7 +324,7 @@ export function Sidebar() {
 
       {/* Bottom Status */}
       <div
-        className="flex items-center gap-1.5 px-3.5 py-2.5 text-[10px]"
+        className="flex items-center gap-1.5 px-5 py-2.5 text-[10px]"
         style={{ borderTop: '1px solid var(--color-border)', color: 'var(--color-dim)' }}
       >
         <StatusDot color="var(--color-green)" />
