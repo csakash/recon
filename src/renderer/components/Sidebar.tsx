@@ -175,7 +175,7 @@ export function Sidebar() {
         {!isRecording ? (
           <button
             onClick={handleStart}
-            className="w-full py-2.5 rounded-lg text-white border-none cursor-pointer font-semibold text-[13px] flex items-center justify-center gap-1.5"
+            className="w-full py-2.5 rounded-lg text-white border-none cursor-pointer font-medium text-[13px] flex items-center justify-center gap-1.5"
             style={{
               background: 'var(--color-accent)',
               fontFamily: 'var(--font-sans)',
@@ -191,7 +191,7 @@ export function Sidebar() {
           <div className="flex gap-2">
             <button
               onClick={handleStop}
-              className="flex-1 py-2.5 rounded-lg border cursor-pointer font-semibold text-[13px] flex items-center justify-center gap-1.5"
+              className="flex-1 py-2.5 rounded-lg border cursor-pointer font-medium text-[13px] flex items-center justify-center gap-1.5"
               style={{
                 background: 'var(--color-bg4)',
                 borderColor: 'var(--color-border2)',
@@ -237,11 +237,11 @@ export function Sidebar() {
       </div>
 
       {/* Sessions List */}
-      <div className="flex-1 overflow-auto px-3">
+      <div className="flex-1 overflow-auto px-4">
         {/* Active recording entry */}
         {isRecording && (
           <div
-            className="py-3 px-3.5 rounded-[7px] mb-1.5"
+            className="py-3 px-2.5 rounded-[7px] mb-1.5"
             style={{ background: 'var(--color-accent-bg)', border: '1px solid var(--color-accent)30' }}
           >
             <div className="flex items-center gap-1.5 mb-1">
@@ -249,7 +249,7 @@ export function Sidebar() {
                 className="w-[7px] h-[7px] rounded-full"
                 style={{ background: 'var(--color-accent)', animation: 'blink 1s step-end infinite' }}
               />
-              <span className="font-medium text-[12.5px]" style={{ color: 'var(--color-accent)' }}>
+              <span className="font-normal text-[12.5px]" style={{ color: 'var(--color-accent)' }}>
                 Recording...
               </span>
             </div>
@@ -265,7 +265,7 @@ export function Sidebar() {
           <div
             key={s.id}
             onClick={() => handleSessionClick(s.id)}
-            className="py-3 px-3.5 rounded-[7px] mb-1.5 cursor-pointer transition-all hover:opacity-90"
+            className="py-3 px-2.5 rounded-[7px] mb-1.5 cursor-pointer transition-all hover:opacity-90"
             style={{
               background: 'transparent',
               border: '1px solid transparent',
@@ -275,7 +275,7 @@ export function Sidebar() {
           >
             <div className="flex items-center gap-1.5 mb-1">
               <StatusDot color="var(--color-green)" />
-              <span className="font-medium text-[12.5px]">{s.name}</span>
+              <span className="font-normal text-[12.5px]">{s.name}</span>
             </div>
             <div className="flex items-center gap-2 pl-3.5">
               <span className="font-mono text-[11px]" style={{ color: 'var(--color-dim)' }}>
@@ -302,7 +302,7 @@ export function Sidebar() {
 
       {/* Bottom Status */}
       <div
-        className="flex items-center gap-1.5 px-3.5 py-2.5 text-[10px]"
+        className="flex items-center gap-1.5 px-4 py-2.5 text-[10px]"
         style={{ borderTop: '1px solid var(--color-border)', color: 'var(--color-dim)' }}
       >
         <StatusDot color="var(--color-green)" />
