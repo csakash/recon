@@ -2,6 +2,7 @@ import { useState, useCallback, useRef, useEffect, ReactNode } from 'react'
 
 interface ResizablePanelProps {
   direction: 'horizontal' | 'vertical'
+  handlePosition?: 'start' | 'end'
   minSize: number
   maxSize: number
   defaultSize: number
@@ -12,6 +13,7 @@ interface ResizablePanelProps {
 
 export function ResizablePanel({
   direction,
+  handlePosition = 'start',
   minSize,
   maxSize,
   defaultSize,
@@ -67,7 +69,7 @@ export function ResizablePanel({
         style={{
           ...(direction === 'vertical'
             ? { top: 0, left: 0, right: 0, height: 4, cursor: 'ns-resize' }
-            : { top: 0, bottom: 0, left: 0, width: 4, cursor: 'ew-resize' }),
+            : { top: 0, bottom: 0, width: 4, cursor: 'ew-resize', ...(handlePosition === 'end' ? { right: 0 } : { left: 0 }) }),
         }}
       />
       {children}

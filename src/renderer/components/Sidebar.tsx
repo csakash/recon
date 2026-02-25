@@ -167,8 +167,8 @@ export function Sidebar() {
 
   return (
     <div
-      className="w-[240px] border-r flex flex-col shrink-0"
-      style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg2)' }}
+      className="h-full flex flex-col"
+      style={{ background: 'var(--color-bg2)' }}
     >
       {/* Record Button */}
       <div className="p-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
@@ -282,8 +282,8 @@ export function Sidebar() {
                 {s.duration}
               </span>
               <span
-                className="text-[10px] opacity-60 overflow-hidden text-ellipsis whitespace-nowrap"
-                style={{ color: 'var(--color-text-secondary)', maxWidth: '130px', display: 'inline-block' }}
+                className="text-[10px] opacity-60 overflow-hidden text-ellipsis whitespace-nowrap min-w-0 flex-1"
+                style={{ color: 'var(--color-text-secondary)' }}
               >
                 {s.url}
               </span>
