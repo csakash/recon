@@ -167,7 +167,7 @@ export function Sidebar() {
 
   return (
     <div
-      className="w-[240px] border-r flex flex-col shrink-0"
+      className="w-full h-full border-r flex flex-col"
       style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg2)' }}
     >
       {/* Record Button */}
