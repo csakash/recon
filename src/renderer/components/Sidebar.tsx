@@ -171,7 +171,7 @@ export function Sidebar() {
       style={{ borderColor: 'var(--color-border)', background: 'var(--color-bg2)' }}
     >
       {/* Record Button */}
-      <div className="p-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
+      <div className="py-4 pl-6 pr-4" style={{ borderBottom: '1px solid var(--color-border)' }}>
         {!isRecording ? (
           <button
             onClick={handleStart}
@@ -224,7 +224,7 @@ export function Sidebar() {
       </div>
 
       {/* Sessions Header */}
-      <div className="flex items-center justify-between px-4 pt-4 pb-3">
+      <div className="flex items-center justify-between pl-6 pr-4 pt-4 pb-3">
         <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-dim)' }}>
           Sessions
         </span>
@@ -237,7 +237,7 @@ export function Sidebar() {
       </div>
 
       {/* Sessions List */}
-      <div className="flex-1 overflow-auto px-4">
+      <div className="flex-1 overflow-auto pl-6 pr-4">
         {/* Active recording entry */}
         {isRecording && (
           <div
@@ -302,7 +302,7 @@ export function Sidebar() {
 
       {/* Bottom Status */}
       <div
-        className="flex items-center gap-1.5 px-4 py-2.5 text-[10px]"
+        className="flex items-center gap-1.5 pl-6 pr-4 py-2.5 text-[10px]"
         style={{ borderTop: '1px solid var(--color-border)', color: 'var(--color-dim)' }}
       >
         <StatusDot color="var(--color-green)" />
