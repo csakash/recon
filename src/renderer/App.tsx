@@ -142,7 +142,9 @@ export default function App() {
       <TitleBar />
 
       <div className="flex-1 flex overflow-hidden min-h-0">
-        <Sidebar />
+        <ResizablePanel direction="horizontal" minSize={180} maxSize={480} defaultSize={240} className="shrink-0">
+          <Sidebar />
+        </ResizablePanel>
 
         {/* Center + Bottom */}
         <div className="flex-1 flex flex-col min-w-0">
