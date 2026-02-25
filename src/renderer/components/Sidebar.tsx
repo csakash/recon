@@ -175,7 +175,7 @@ export function Sidebar() {
         {!isRecording ? (
           <button
             onClick={handleStart}
-            className="w-full py-2.5 rounded-lg text-white border-none cursor-pointer font-semibold text-[13px] flex items-center justify-center gap-1.5"
+            className="w-full max-w-[220px] mx-auto py-2.5 rounded-lg text-white border-none cursor-pointer font-semibold text-[13px] flex items-center justify-center gap-1.5"
             style={{
               background: 'var(--color-accent)',
               fontFamily: 'var(--font-sans)',
@@ -188,7 +188,7 @@ export function Sidebar() {
             Start Recording
           </button>
         ) : (
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full max-w-[220px] mx-auto">
             <button
               onClick={handleStop}
               className="flex-1 py-2.5 rounded-lg border cursor-pointer font-semibold text-[13px] flex items-center justify-center gap-1.5"
@@ -224,7 +224,7 @@ export function Sidebar() {
       </div>
 
       {/* Sessions Header */}
-      <div className="flex items-center justify-between px-4 pt-3 pb-2">
+      <div className="flex items-center justify-between px-4 pt-4 pb-3">
         <span className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: 'var(--color-dim)' }}>
           Sessions
         </span>
@@ -237,11 +237,11 @@ export function Sidebar() {
       </div>
 
       {/* Sessions List */}
-      <div className="flex-1 overflow-auto px-3">
+      <div className="flex-1 overflow-auto px-4">
         {/* Active recording entry */}
         {isRecording && (
           <div
-            className="py-3 px-3.5 rounded-[7px] mb-1.5"
+            className="py-3 px-3.5 rounded-[7px] mb-2.5"
             style={{ background: 'var(--color-accent-bg)', border: '1px solid var(--color-accent)30' }}
           >
             <div className="flex items-center gap-1.5 mb-1">
@@ -265,7 +265,7 @@ export function Sidebar() {
           <div
             key={s.id}
             onClick={() => handleSessionClick(s.id)}
-            className="py-3 px-3.5 rounded-[7px] mb-1.5 cursor-pointer transition-all hover:opacity-90"
+            className="py-3 px-3.5 rounded-[7px] mb-2.5 cursor-pointer transition-all hover:opacity-90"
             style={{
               background: 'transparent',
               border: '1px solid transparent',
@@ -302,7 +302,7 @@ export function Sidebar() {
 
       {/* Bottom Status */}
       <div
-        className="flex items-center gap-1.5 px-3.5 py-2.5 text-[10px]"
+        className="flex items-center gap-1.5 px-4 py-2.5 text-[10px]"
         style={{ borderTop: '1px solid var(--color-border)', color: 'var(--color-dim)' }}
       >
         <StatusDot color="var(--color-green)" />
