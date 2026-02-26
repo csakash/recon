@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { useBrowserStore } from '../stores/browser'
 import { DEVICE_PRESETS } from '../constants/devicePresets'
 
@@ -13,15 +14,32 @@ export function DeviceSelector() {
   const { selectedDevice, isRotated, setDevice, toggleRotation } = useBrowserStore()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const [dropdownPos, setDropdownPos] = useState({ top: 0, left: 0 })
+
+  const updateDropdownPos = useCallback(() => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect()
+      setDropdownPos({ top: rect.bottom + 4, left: rect.left })
+    }
+  }, [])
 
   useEffect(() => {
     if (!open) return
+    updateDropdownPos()
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      const target = e.target as Node
+      if (
+        ref.current && !ref.current.contains(target) &&
+        dropdownRef.current && !dropdownRef.current.contains(target)
+      ) {
+        setOpen(false)
+      }
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
-  }, [open])
+  }, [open, updateDropdownPos])
 
   const displayName = selectedDevice ? selectedDevice.name : 'Responsive'
   const effectiveWidth = selectedDevice
@@ -39,6 +57,7 @@ export function DeviceSelector() {
     <div ref={ref} className="relative flex items-center gap-1">
       {/* Trigger button */}
       <button
+        ref={triggerRef}
         onClick={() => setOpen(!open)}
         className="flex items-center gap-1.5 rounded-[5px] border px-2 py-1 cursor-pointer text-[11px]"
         style={{
@@ -114,11 +133,16 @@ export function DeviceSelector() {
         </button>
       )}
 
-      {/* Dropdown */}
-      {open && (
+      {/* Dropdown via portal to avoid overflow clipping */}
+      {open && createPortal(
         <div
-          className="absolute top-full left-0 mt-1 z-50 rounded-lg overflow-hidden"
+          ref={dropdownRef}
+          className="rounded-lg overflow-hidden"
           style={{
+            position: 'fixed',
+            top: dropdownPos.top,
+            left: dropdownPos.left,
+            zIndex: 9999,
             background: 'var(--color-bg3)',
             border: '1px solid var(--color-border)',
             minWidth: '240px',
@@ -204,7 +228,8 @@ export function DeviceSelector() {
               ))}
             </div>
           ))}
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
