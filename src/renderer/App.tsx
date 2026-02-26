@@ -138,7 +138,7 @@ export default function App() {
   }, [status, startRecording, stopRecording])
 
   return (
-    <div className="h-screen w-screen flex flex-col overflow-hidden">
+    <div className="h-screen w-screen flex flex-col overflow-hidden p-2" style={{ background: 'var(--color-bg)' }}>
       <TitleBar />
 
       <div className="flex-1 flex overflow-hidden min-h-0">
