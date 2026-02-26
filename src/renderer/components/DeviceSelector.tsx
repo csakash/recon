@@ -28,6 +28,8 @@ export function DeviceSelector() {
   useEffect(() => {
     if (!open) return
     updateDropdownPos()
+    // Hide the native WebContentsView so the dropdown is not obscured by it
+    window.recon?.hideBrowserView()
     const handler = (e: MouseEvent) => {
       const target = e.target as Node
       if (
@@ -38,7 +40,11 @@ export function DeviceSelector() {
       }
     }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      // Restore the native WebContentsView when dropdown closes
+      window.recon?.showBrowserView()
+    }
   }, [open, updateDropdownPos])
 
   const displayName = selectedDevice ? selectedDevice.name : 'Responsive'
