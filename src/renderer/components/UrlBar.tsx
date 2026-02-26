@@ -1,5 +1,6 @@
 import { useState, useEffect, KeyboardEvent } from 'react'
 import { useBrowserStore } from '../stores/browser'
+import { DeviceSelector } from './DeviceSelector'
 
 export function UrlBar() {
   const { url, setUrl } = useBrowserStore()
@@ -41,6 +42,12 @@ export function UrlBar() {
           </button>
         ))}
       </div>
+
+      {/* Device selector */}
+      <DeviceSelector />
+
+      {/* Separator */}
+      <div className="w-px h-[20px]" style={{ background: 'var(--color-border)' }} />
 
       {/* URL input */}
       <div
